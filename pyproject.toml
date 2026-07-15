@@ -1,0 +1,26 @@
+[project]
+name = "receptionist-voice-agent"
+version = "0.1.0"
+description = "Receptionist voice AI bot with Moss semantic retrieval over Pipecat"
+requires-python = ">=3.11"
+dependencies = [
+    "pipecat-ai[webrtc,daily,silero,deepgram,openai,cartesia,runner]>=1.5.0",
+    "pipecat-ai-cli",
+    # pipecat-moss from PyPI is vendored locally in ./pipecat_moss instead
+    # (patched for pipecat-ai 1.5, which removed LLMMessagesFrame).
+    # inferedge-moss pinned to b12: newer inferedge-moss-core wheels need
+    # glibc >= 2.38 and this machine (Debian 12) has 2.36. b12's core (0.3.0)
+    # is the newest build that runs here.
+    "inferedge-moss==1.0.0b12",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.404,<2",
+    "ruff>=0.12.11,<1",
+]
+
+[tool.ruff]
+line-length = 100
+[tool.ruff.lint]
+select = ["I"]
