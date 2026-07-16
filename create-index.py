@@ -3,7 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from loguru import logger
-from inferedge_moss import DocumentInfo, MossClient
+from moss import DocumentInfo, MossClient
 
 load_dotenv()
 
@@ -78,7 +78,7 @@ async def upload_documents():
     try:
         logger.debug("Creating the index...")
         await client.create_index(
-            index_name=os.getenv("MOSS_INDEX_NAME"),
+            name=os.getenv("MOSS_INDEX_NAME"),
             docs=documents,
             model_id="moss-minilm",
         )

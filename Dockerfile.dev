@@ -1,0 +1,38 @@
+# Local development image.
+#
+# The `moss` SDK ships native wheels that need glibc >= 2.38, so on older
+# hosts (e.g. Debian 12, glibc 2.36) the bot can't run natively. This image
+# uses Debian 13 (trixie, glibc 2.41) so the latest Moss packages work.
+#
+# Build:  docker build -f Dockerfile.dev -t receptionist-dev .
+# Run:    docker run --rm -it --network host --env-file .env receptionist-dev
+# Index:  docker run --rm -it --network host --env-file .env receptionist-dev \
+#             uv run --no-sync create-index.py
+#
+# --network host is required: WebRTC negotiates dynamic UDP ports that
+# plain -p port mapping can't forward.
+
+FROM python:3.12-slim-trixie
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+# System libs needed by opencv (pulled in by pipecat's webrtc extra) that
+# slim images don't include.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgl1 libglib2.0-0 libxcb1 libx11-6 libxext6 libsm6 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+
+# Install dependencies first so they cache independently of code changes
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
+
+COPY . .
+
+# Dependencies are already installed at build time; --no-sync stops uv from
+# trying to reinstall (which would also pull dev deps) on every start.
+CMD ["uv", "run", "--no-sync", "bot.py"]

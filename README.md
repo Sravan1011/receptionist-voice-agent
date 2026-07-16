@@ -14,8 +14,10 @@ retrieval over your business's FAQ/policy knowledge base. Forked from Moss's
   one fact per document, not one giant block of text
 - `env.example` — copy to `.env` and fill in your API keys
 - `pipecat_moss/` — vendored copy of the `pipecat-moss` PyPI package, patched
-  for pipecat-ai 1.5 (upstream still imports frames removed in 1.5). Delete it
-  and restore the PyPI dep once upstream catches up.
+  for pipecat-ai 1.5 (upstream still imports frames removed in 1.5) and
+  updated to the current `moss` SDK. Delete it and restore the PyPI dep once
+  upstream catches up.
+- `Dockerfile.dev` — local development image (see platform notes below)
 - `Dockerfile`, `pcc-deploy.toml` — for deploying to Pipecat Cloud once local
   dev works
 
@@ -23,8 +25,10 @@ retrieval over your business's FAQ/policy knowledge base. Forked from Moss's
 
 - Python is pinned to 3.12 in `.python-version` — the Moss client can't
   compute query embeddings on 3.14.
-- `inferedge-moss` is pinned to `1.0.0b12` in `pyproject.toml` — newer
-  releases ship wheels that need glibc >= 2.38 and Debian 12 has 2.36.
+- The `moss` SDK's native wheels need glibc >= 2.38. Debian 12 has 2.36, so
+  on this machine the bot runs inside Docker (`Dockerfile.dev`, based on
+  Debian 13). On a host with glibc >= 2.38 (Debian 13+, Ubuntu 24.04+),
+  plain `uv sync` + `uv run bot.py` works natively.
 - The embedding model (~87 MB) is cached at `~/.cache/moss-models/moss-minilm/`
   after first use.
 
@@ -38,23 +42,31 @@ retrieval over your business's FAQ/policy knowledge base. Forked from Moss's
 2. ```bash
    cp env.example .env
    # fill in your keys in .env
-   uv sync
-   source .venv/bin/activate
    ```
 
-3. Edit `create-index.py` — swap in your real business info, then upload it:
+3. Build the dev image:
 
    ```bash
-   uv run create-index.py
+   docker build -f Dockerfile.dev -t receptionist-dev .
    ```
 
-4. Run the bot locally:
+4. Edit `create-index.py` — swap in your real business info, then upload it:
 
    ```bash
-   uv run bot.py
+   docker run --rm -it --network host --env-file .env receptionist-dev \
+       uv run create-index.py
+   ```
+
+5. Run the bot locally:
+
+   ```bash
+   docker run --rm -it --network host --env-file .env receptionist-dev
    ```
 
    Open http://localhost:7860 and click **Connect** to talk to it.
+
+   (On a host with glibc >= 2.38 you can skip Docker entirely:
+   `uv sync && uv run bot.py`.)
 
 ## What's NOT wired in yet (your next build steps)
 
