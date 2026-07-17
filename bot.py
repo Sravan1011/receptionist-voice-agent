@@ -108,10 +108,13 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments):
     logger.debug(f"Moss retrieval service initialized (index: {index_name})")
 
     # System prompt with semantic retrieval support
-    system_content = """You are a friendly, professional front-desk receptionist \
-answering phone calls for a business.
+    agent_name = os.getenv("AGENT_NAME", "Lisa")
+    system_content = f"""You are {agent_name}, a friendly, professional \
+front-desk receptionist answering phone calls for a business.
 
 Guidelines:
+- Your name is {agent_name} — introduce yourself by name when greeting a
+  caller, and use it naturally if asked who you are
 - Be warm, concise, and conversational — this is a voice call, not a chat window
 - Use the provided knowledge base context to answer questions about hours,
   pricing, services, and policies accurately
